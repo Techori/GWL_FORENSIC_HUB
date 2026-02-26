@@ -2,29 +2,30 @@ from flask import Flask, render_template, request, jsonify
 import requests
 import os
 import concurrent.futures
-import re
 
 app = Flask(__name__)
 
-# Core Forensic Keys
+# Forensic Assets Integration
+SHODAN_KEY = "shrakyjglhkz9tfryxshhbg4tc8vos5l"
 LEAK_TOKEN = "7128071523:0Lv2XEkN"
 GEMINI_KEY = "AIzaSyAsIUu5qfLvxswYtZp8FTly6BOHYn27KIA"
-SHODAN_KEY = "shrakyjGLHkz9tfRYXshhBG4Tc8voS5L"
 
-def call_shodan(ip):
+def get_shodan_data(ip):
     try:
+        # Direct API hit to Shodan nodes
         url = f"https://api.shodan.io/shodan/host/{ip}?key={SHODAN_KEY}"
-        r = requests.get(url, timeout=15)
-        return {"source": "Shodan-Intelligence", "data": r.json()}
-    except: return None
+        r = requests.get(url, timeout=10)
+        return r.json()
+    except:
+        return {"error": "Shodan Node Timeout"}
 
-def call_leakosint(query):
+def get_ip_geo(ip):
     try:
-        url = "https://leakosintapi.com/"
-        payload = {"token": LEAK_TOKEN, "request": query, "limit": 100, "lang": "en"}
-        r = requests.post(url, json=payload, headers={'Content-Type': 'application/json'}, timeout=15)
-        return {"source": "Leak-Database", "data": r.json().get("List")}
-    except: return None
+        # Geolocation & ISP tracking
+        r = requests.get(f"http://ip-api.com/json/{ip}", timeout=5)
+        return r.json()
+    except:
+        return {"error": "Geo-Node Error"}
 
 @app.route('/')
 def index():
@@ -32,31 +33,30 @@ def index():
 
 @app.route('/scan', methods=['POST'])
 def scan():
-    target = request.form.get('query').strip()
-    is_ip = re.match(r"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$", target)
-    results = []
-
+    target = request.form.get('query')
+    results = {}
+    
     with concurrent.futures.ThreadPoolExecutor() as executor:
-        futures = [executor.submit(call_leakosint, target)]
-        if is_ip:
-            futures.append(executor.submit(call_shodan, target))
+        shodan_task = executor.submit(get_shodan_data, target)
+        geo_task = executor.submit(get_ip_geo, target)
         
-        for f in concurrent.futures.as_completed(futures):
-            res = f.result()
-            if res: results.append(res)
-
+        results['shodan'] = shodan_task.result()
+        results['geo'] = geo_task.result()
+        
     return jsonify({"status": "success", "results": results})
 
 @app.route('/analyze', methods=['POST'])
 def analyze():
     data = request.json
+    # Gemini Neural Link for profiling
     api_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_KEY}"
-    prompt = f"Identify criminal leads from this data: {data.get('intel')}. User: {data.get('msg')}. Respond briefly as Cyber Rat Forensic AI."
+    prompt = f"Analyze this IP forensic data and identify vulnerabilities or criminal leads: {data.get('intel')}. Respond as Cyber Rat AI."
+    
     try:
-        r = requests.post(api_url, json={"contents": [{"parts": [{"text": prompt}]}]}, timeout=20)
+        r = requests.post(api_url, json={"contents": [{"parts": [{"text": prompt}]}]}, timeout=15)
         return jsonify({"reply": r.json()['candidates'][0]['content']['parts'][0]['text']})
     except:
-        return jsonify({"reply": "Neural Link Error."})
+        return jsonify({"reply": "Neural Link Refused."})
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 8080))
