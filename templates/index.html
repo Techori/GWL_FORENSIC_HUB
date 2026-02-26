@@ -3,37 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <title>GWL Cyber RAT | Forensic Command</title>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
     <style>
-        :root { --accent: #ffb400; --bg: #0a0c10; --panel: #161b22; }
-        body { background: var(--bg); color: #e6edf3; font-family: 'Inter', sans-serif; margin: 0; }
-        .header { background: var(--panel); padding: 15px 30px; display: flex; align-items: center; border-bottom: 2px solid var(--accent); }
-        .police-logo { height: 60px; margin-right: 20px; }
-        .title-text { font-family: 'Orbitron', sans-serif; font-size: 1.8rem; color: var(--accent); }
-        .main-container { display: grid; grid-template-columns: 3fr 1fr; gap: 20px; padding: 20px; height: 80vh; }
-        .rat-character { width: 100%; border-radius: 12px; border: 1px solid #30363d; margin-bottom: 15px; }
-        .terminal-box { background: #000; border: 1px solid var(--accent); border-radius: 8px; padding: 15px; font-family: monospace; overflow-y: auto; color: #00ff41; }
-        .highlight { font-weight: bold; color: var(--accent); text-transform: uppercase; }
+        body { background-color: #0a0c10; color: #e6edf3; font-family: sans-serif; margin: 0; }
+        .header { background: #161b22; padding: 10px 20px; display: flex; align-items: center; border-bottom: 2px solid #ffb400; }
+        .police-logo { height: 70px; margin-right: 15px; }
+        .branding { font-size: 24px; font-weight: bold; color: #ffb400; text-transform: uppercase; }
+        .container { display: flex; padding: 20px; gap: 20px; }
+        .main-panel { flex: 2; background: #161b22; border-radius: 8px; padding: 20px; border: 1px solid #30363d; }
+        .side-panel { flex: 1; text-align: center; }
+        .rat-img { width: 100%; border-radius: 12px; border: 2px solid #ffb400; }
+        input { width: 70%; padding: 12px; border-radius: 4px; border: 1px solid #30363d; background: #0d1117; color: white; }
+        button { padding: 12px 24px; background: #ffb400; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
-    <header class="header">
-        <img src="https://i.imgur.com/uC0XmXv.png" class="police-logo" alt="MP Cyber Police">
-        <div class="title-text">**GWL Cyber RAT** Forensic Engine</div>
-    </header>
-    <div class="main-container">
-        <div class="terminal-box" id="output">
-            [*] System initialized...<br>
-            [*] Shodan Node: <span style="color:white">shrakyj...</span> READY<br>
-            [*] Gemini Neural Link: ONLINE<br><br>
-            READY FOR TARGET INPUT_
+    <div class="header">
+        <img src="https://i.ibb.co/v4S8ZzP/image-061037.png" class="police-logo" alt="MP Cyber Police">
+        <div class="branding">**GWL Cyber RAT** Forensic Engine</div>
+    </div>
+    <div class="container">
+        <div class="main-panel">
+            <h2>Investigation Portal</h2>
+            <input type="text" placeholder="Enter IP or OSINT Target...">
+            <button>INITIALIZE SCAN</button>
+            <div id="results" style="margin-top:20px; color:#00ff41; font-family:monospace;">[*] System Ready. Waiting for target...</div>
         </div>
-        <div class="sidebar">
-            <img src="https://i.imgur.com/your-rat-image.png" class="rat-character" alt="Cyber Rat">
-            <div style="background:var(--panel); padding:15px; border-radius:8px; border:1px solid #30363d;">
-                <h3 style="margin-top:0; color:var(--accent);">Investigation Intel</h3>
-                <p style="font-size:0.85rem; line-height:1.4;">Active scan nodes analyzing 48 sectors for real-time asset intelligence.</p>
-            </div>
+        <div class="side-panel">
+            <img src="https://i.ibb.co/0YmYVfN/image-060bdd.png" class="rat-img" alt="Cyber Rat Agent">
+            <p style="color:#ffb400; font-weight:bold;">Agent: Cyber Rat</p>
         </div>
     </div>
 </body>
