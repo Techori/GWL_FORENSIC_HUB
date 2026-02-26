@@ -2,36 +2,68 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>GWL Cyber RAT | Forensic Command</title>
+    <title>GWL Cyber RAT | Forensic Engine</title>
     <style>
-        body { background-color: #0a0c10; color: #e6edf3; font-family: sans-serif; margin: 0; }
-        .header { background: #161b22; padding: 10px 20px; display: flex; align-items: center; border-bottom: 2px solid #ffb400; }
-        .police-logo { height: 70px; margin-right: 15px; }
-        .branding { font-size: 24px; font-weight: bold; color: #ffb400; text-transform: uppercase; }
-        .container { display: flex; padding: 20px; gap: 20px; }
-        .main-panel { flex: 2; background: #161b22; border-radius: 8px; padding: 20px; border: 1px solid #30363d; }
-        .side-panel { flex: 1; text-align: center; }
-        .rat-img { width: 100%; border-radius: 12px; border: 2px solid #ffb400; }
-        input { width: 70%; padding: 12px; border-radius: 4px; border: 1px solid #30363d; background: #0d1117; color: white; }
-        button { padding: 12px 24px; background: #ffb400; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; }
+        body { background: #0a0c10; color: #e6edf3; font-family: sans-serif; margin: 0; }
+        .header { background: #161b22; padding: 15px; border-bottom: 2px solid #ffb400; display: flex; align-items: center; }
+        .branding { font-size: 20px; font-weight: bold; color: #ffb400; margin-left: 10px; }
+        .container { padding: 20px; max-width: 900px; margin: auto; }
+        .panel { background: #161b22; padding: 20px; border-radius: 8px; border: 1px solid #30363d; }
+        input { width: 70%; padding: 12px; background: #0d1117; border: 1px solid #30363d; color: white; border-radius: 4px; }
+        button { padding: 12px 20px; background: #ffb400; border: none; font-weight: bold; cursor: pointer; border-radius: 4px; }
+        #results { margin-top: 20px; padding: 15px; background: #000; border: 1px solid #00ff41; color: #00ff41; font-family: monospace; white-space: pre-wrap; height: 300px; overflow-y: auto; }
     </style>
 </head>
 <body>
     <div class="header">
-        <img src="https://i.ibb.co/v4S8ZzP/image-061037.png" class="police-logo" alt="MP Cyber Police">
         <div class="branding">**GWL Cyber RAT** Forensic Engine</div>
     </div>
     <div class="container">
-        <div class="main-panel">
-            <h2>Investigation Portal</h2>
-            <input type="text" placeholder="Enter IP or OSINT Target...">
-            <button>INITIALIZE SCAN</button>
-            <div id="results" style="margin-top:20px; color:#00ff41; font-family:monospace;">[*] System Ready. Waiting for target...</div>
-        </div>
-        <div class="side-panel">
-            <img src="https://i.ibb.co/0YmYVfN/image-060bdd.png" class="rat-img" alt="Cyber Rat Agent">
-            <p style="color:#ffb400; font-weight:bold;">Agent: Cyber Rat</p>
+        <div class="panel">
+            <h3>Investigation Portal</h3>
+            <input type="text" id="targetInput" placeholder="Enter IP or Username...">
+            <button onclick="startScan()">INITIALIZE SCAN</button>
+            <div id="results">[*] System Ready. Waiting for target...</div>
         </div>
     </div>
+
+    <script>
+        async function startScan() {
+            const query = document.getElementById('targetInput').value;
+            const resDiv = document.getElementById('results');
+            if(!query) return alert("Target input required!");
+
+            resDiv.innerText = "[*] Initiating Multi-Node Scan...\n[*] Accessing Shodan & Leak-DB...";
+            
+            try {
+                const formData = new FormData();
+                formData.append('query', query);
+
+                const response = await fetch('/scan', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if(data.status === "success") {
+                    resDiv.innerText = JSON.stringify(data.results, null, 2);
+                    // AI Analysis request
+                    resDiv.innerText += "\n\n[*] Sending to Cyber Rat AI for profiling...";
+                    const aiRes = await fetch('/analyze', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({intel: data.results, msg: "Analyze these leads."})
+                    });
+                    const aiData = await aiRes.json();
+                    resDiv.innerText += "\n\n[AI ANALYSIS]:\n" + aiData.analysis;
+                } else {
+                    resDiv.innerText = "[!] Error: " + data.msg;
+                }
+            } catch (err) {
+                resDiv.innerText = "[!] Connection Failed: Check Render Logs.";
+            }
+        }
+    </script>
 </body>
 </html>
