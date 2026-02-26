@@ -6,24 +6,25 @@ import re
 
 app = Flask(__name__)
 
-# Intelligence Keys
+# Core Forensic Keys
 LEAK_TOKEN = "7128071523:0Lv2XEkN"
 GEMINI_KEY = "AIzaSyAsIUu5qfLvxswYtZp8FTly6BOHYn27KIA"
+SHODAN_KEY = "shrakyjGLHkz9tfRYXshhBG4Tc8voS5L"
+
+def call_shodan(ip):
+    try:
+        url = f"https://api.shodan.io/shodan/host/{ip}?key={SHODAN_KEY}"
+        r = requests.get(url, timeout=15)
+        return {"source": "Shodan-Intelligence", "data": r.json()}
+    except: return None
 
 def call_leakosint(query):
     try:
         url = "https://leakosintapi.com/"
         payload = {"token": LEAK_TOKEN, "request": query, "limit": 100, "lang": "en"}
-        r = requests.post(url, json=payload, headers={'Content-Type': 'application/json'}, timeout=20)
+        r = requests.post(url, json=payload, headers={'Content-Type': 'application/json'}, timeout=15)
         return {"source": "Leak-Database", "data": r.json().get("List")}
-    except: return {"source": "Leak-Database", "data": "Uplink Timeout"}
-
-def call_ip_forensics(ip):
-    try:
-        # Detailing: City, ISP, Proxy, VPN, Mobile status
-        r = requests.get(f"http://ip-api.com/json/{ip}?fields=66846719", timeout=15)
-        return {"source": "IP-Forensics", "data": r.json()}
-    except: return {"source": "IP-Forensics", "data": "Tracking Failed"}
+    except: return None
 
 @app.route('/')
 def index():
@@ -32,33 +33,30 @@ def index():
 @app.route('/scan', methods=['POST'])
 def scan():
     target = request.form.get('query').strip()
-    if not target: return jsonify({"status": "error", "msg": "No target provided"}), 400
-    
     is_ip = re.match(r"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$", target)
     results = []
 
-    # Parallel Scan: Sabhi APIs ek saath hit karengi
     with concurrent.futures.ThreadPoolExecutor() as executor:
-        tasks = [executor.submit(call_leakosint, target)]
+        futures = [executor.submit(call_leakosint, target)]
         if is_ip:
-            tasks.append(executor.submit(call_ip_forensics, target))
+            futures.append(executor.submit(call_shodan, target))
         
-        for task in concurrent.futures.as_completed(tasks):
-            results.append(task.result())
+        for f in concurrent.futures.as_completed(futures):
+            res = f.result()
+            if res: results.append(res)
 
     return jsonify({"status": "success", "results": results})
 
-@app.route('/ask_rat', methods=['POST'])
-def ask_rat():
+@app.route('/analyze', methods=['POST'])
+def analyze():
     data = request.json
     api_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_KEY}"
-    prompt = f"Identify criminal leads from this forensic data: {data.get('intel')}. User message: {data.get('msg')}. Respond as Cyber Rat Forensic AI."
-    
+    prompt = f"Identify criminal leads from this data: {data.get('intel')}. User: {data.get('msg')}. Respond briefly as Cyber Rat Forensic AI."
     try:
         r = requests.post(api_url, json={"contents": [{"parts": [{"text": prompt}]}]}, timeout=20)
         return jsonify({"reply": r.json()['candidates'][0]['content']['parts'][0]['text']})
     except:
-        return jsonify({"reply": "Cyber Rat Neural Link: Signal Lost."})
+        return jsonify({"reply": "Neural Link Error."})
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 8080))
